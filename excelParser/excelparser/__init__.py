@@ -26,7 +26,7 @@ def OpenBrowseDialog(prompt):
 def IterateColumn(columnName,sheet,ref):
     colDataList = []
     id_col = None
-    for cell in sheet[1]:  # Assuming the header is in the first row
+    for cell in sheet[1]:
         if cell.value == columnName:
             id_col = cell.column
             break
