@@ -82,7 +82,7 @@ def saveToFile(data, columnName, sheetName):
     ws.cell(row=1, column=col, value=columnName)
     for indx, value in enumerate(data, start=2):
         ws.cell(row=indx, column=col, value=value)
-
+    print(f"Saved: {columnName}, Sheet: {sheetName}, total rows: {len(data)}")
     destinationWB.save(destinationExcel)
 
 def StartProcess(sourceColumnName,sourceSheetName,destinationColumnName,destinationSheetName,regExFlag):
