@@ -79,14 +79,15 @@ def saveToFile(data, columnName, sheetName):
 
     destinationWB.save(destinationExcel)
 
+def StartProcess(sourceColumnName,sourceSheetName,destinationColumnName,destinationSheetName,regExFlag):
+    consignmentIdData = ProcessColumn(sourceColumnName,sourceSheetName,regExFlag)
+    saveToFile(consignmentIdData,destinationColumnName,destinationSheetName)
+
 
 if __name__ == "__main__":
     sourceExcel = LoadExcelFile()
     destinationExcel = LoadExcelFile()
     destinationWB = load_workbook(filename=destinationExcel)
 
-    consignmentIdData = ProcessColumn(CONSIGNMENT_ID,SHEET_CONSIGNMENT_DATA,False)
-    saveToFile(consignmentIdData,BOOKING_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE)
-
-    consignmentReferenceData = ProcessColumn(CONSIGNMENT_REFERENCE,SHEET_CONSIGNMENT_DATA,True)
-    saveToFile(consignmentReferenceData,ORDER_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE)
+    StartProcess(CONSIGNMENT_ID,SHEET_CONSIGNMENT_DATA,BOOKING_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE,False)
+    StartProcess(CONSIGNMENT_REFERENCE,SHEET_CONSIGNMENT_DATA,ORDER_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE,True)
