@@ -79,12 +79,13 @@ def saveToFile(data, columnName, sheetName):
     destinationWB.save(destinationExcel)
 
 
-sourceExcel = LoadExcelFile()
-destinationExcel = LoadExcelFile()
-destinationWB = load_workbook(filename=destinationExcel)
+if __name__ == "__main__":
+    sourceExcel = LoadExcelFile()
+    destinationExcel = LoadExcelFile()
+    destinationWB = load_workbook(filename=destinationExcel)
 
-consignmentIdData = ProcessColumn(CONSIGNMENT_ID,SHEET_CONSIGNMENT_DATA,False)
-saveToFile(consignmentIdData,BOOKING_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE)
+    consignmentIdData = ProcessColumn(CONSIGNMENT_ID,SHEET_CONSIGNMENT_DATA,False)
+    saveToFile(consignmentIdData,BOOKING_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE)
 
-consignmentReferenceData = ProcessColumn(CONSIGNMENT_REFERENCE,SHEET_CONSIGNMENT_DATA,True)
-saveToFile(consignmentReferenceData,ORDER_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE)
+    consignmentReferenceData = ProcessColumn(CONSIGNMENT_REFERENCE,SHEET_CONSIGNMENT_DATA,True)
+    saveToFile(consignmentReferenceData,ORDER_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE)
