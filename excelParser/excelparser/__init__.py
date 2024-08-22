@@ -1,6 +1,7 @@
 from openpyxl import load_workbook
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
+import re
 
 # Constants
 SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE = "Standard Freight Import Templat"
@@ -13,7 +14,7 @@ ORDER_NO = "Order No"
 BOOKING_NO = "Booking No"
 
 def ProcessConsignmentRefValue(value):
-    return value.split('/')[0]
+    return re.split(r'[/-]',value)[0]
 
 
 def OpenBrowseDialog(prompt):
