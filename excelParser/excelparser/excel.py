@@ -22,12 +22,12 @@ def FindFirstEmptyRow(sheet):
             return row
     return sheet.max_row + 1  # If no empty row is found, append at the end
 
-def CopyColumns(source_file, destination_file, column_mapping):
+def CopyColumns(source_file, destination_file, column_mapping, sourceSheet, destinationSheet):
     source_wb = load_workbook(source_file)
-    source_sheet = source_wb.active
+    source_sheet = sourceSheet
 
     destination_wb = load_workbook(destination_file)
-    destination_sheet = destination_wb.active
+    destination_sheet = destinationSheet
 
     # Find the columns in the Source and Destination sheets based on the provided mapping
     source_columns = {src_col: find_column_index(source_sheet, src_col) for src_col in column_mapping.keys()}
@@ -67,10 +67,13 @@ if __name__ == "__main__":
     sourceExcel = OpenBrowseDialog("Select the source Excel file")
     destinationExcel = OpenBrowseDialog("Select the destination Excel file")
 
+    sourceSheet = ""
+    destinationSheet = ""
+
     column_mapping = {
     'id': 'idntificatioNo',
     'name': 'Contant-name',
     'address': 'Contact-address'
     }
 
-    CopyColumns(sourceExcel, destinationExcel, column_mapping)
+    CopyColumns(sourceExcel, destinationExcel, column_mapping, sourceSheet, destinationSheet)
