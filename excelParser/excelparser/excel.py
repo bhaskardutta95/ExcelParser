@@ -24,10 +24,10 @@ def FindFirstEmptyRow(sheet):
 
 def CopyColumns(source_file, destination_file, column_mapping, sourceSheet, destinationSheet):
     source_wb = load_workbook(source_file)
-    source_sheet = sourceSheet
+    source_sheet = source_wb[sourceSheet]
 
     destination_wb = load_workbook(destination_file)
-    destination_sheet = destinationSheet
+    destination_sheet = destination_wb[destinationSheet]
 
     # Find the columns in the Source and Destination sheets based on the provided mapping
     source_columns = {src_col: find_column_index(source_sheet, src_col) for src_col in column_mapping.keys()}
@@ -67,13 +67,13 @@ if __name__ == "__main__":
     sourceExcel = OpenBrowseDialog("Select the source Excel file")
     destinationExcel = OpenBrowseDialog("Select the destination Excel file")
 
-    sourceSheet = ""
-    destinationSheet = ""
+    sourceSheet = "Consignment Data"
+    destinationSheet = "Standard Freight Import Templat"
 
     column_mapping = {
-    'id': 'idntificatioNo',
-    'name': 'Contant-name',
-    'address': 'Contact-address'
+        'Consignment ID': 'Booking No',
+        'Consignment Reference': 'Order No',
+        'Total SPC': 'Charge Qty'
     }
 
     CopyColumns(sourceExcel, destinationExcel, column_mapping, sourceSheet, destinationSheet)
