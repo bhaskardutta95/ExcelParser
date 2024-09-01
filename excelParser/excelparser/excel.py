@@ -1,4 +1,4 @@
-from openpyxl import load_workbook
+from openpyxl import load_workbook,utils
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 import re
@@ -8,6 +8,33 @@ def OpenBrowseDialog(prompt):
     Tk().withdraw()  
     file_path = askopenfilename(title=prompt, filetypes=[("Excel files", "*.xlsx")])
     return file_path
+
+def SaveFile(wb, file_path):
+    wb.save(file_path)
+
+
+def readOrderIdsFromExcel(sheet, orderIdColumnName):
+    orderIds = []
+
+    # Find the column index for the "OrderId" column
+    orderIdColumnIndex = None
+    for cell in sheet[1]:  # Assuming the first row contains headers
+        if cell.value == orderIdColumnName:
+            orderIdColumnIndex = cell.column
+            break
+
+    if orderIdColumnIndex is None:
+        # raise ValueError(f"Column '{orderIdColumnName}' not found in the sheet.")
+        print(f"Column '{orderIdColumnName}' not found in the sheet.")
+
+    # Iterate through the rows and collect the OrderIds
+    for row in sheet.iter_rows(min_row=2):  # Skip the header row
+        orderId = row[orderIdColumnIndex - 1].value  # -1 because row is 0-indexed but columns are 1-indexed
+        if orderId is not None:
+            orderIds.append(orderId)
+
+    return orderIds
+
 
 def find_column_index(sheet, column_name):
     for col in range(1, sheet.max_column + 1):
@@ -22,13 +49,7 @@ def FindFirstEmptyRow(sheet):
             return row
     return sheet.max_row + 1  # If no empty row is found, append at the end
 
-def CopyColumns(source_file, destination_file, column_mapping, sourceSheet, destinationSheet):
-    source_wb = load_workbook(source_file)
-    source_sheet = source_wb[sourceSheet]
-
-    destination_wb = load_workbook(destination_file)
-    destination_sheet = destination_wb[destinationSheet]
-
+def CopyColumns(destination_wb, column_mapping, source_sheet, destination_sheet):
     # Find the columns in the Source and Destination sheets based on the provided mapping
     source_columns = {src_col: find_column_index(source_sheet, src_col) for src_col in column_mapping.keys()}
     missing_source_columns = [col for col, idx in source_columns.items() if idx is None]
@@ -58,9 +79,56 @@ def CopyColumns(source_file, destination_file, column_mapping, sourceSheet, dest
         start_row += 1  # Move to the next row
 
     # Save the updated Destination workbook
-    destination_wb.save(destination_file)
     print("Data copied successfully!")
+    return destination_wb
 
+def SearchRefAndBreakdown(sheet,referenceNumberList):
+    breakdownColumn = 'L'
+    refAndBreakdownList = {}
+    referencesNotFound = set(referenceNumberList)  # Initially assume all words are not found
+
+    # Iterate over all cells in the sheet
+    for row in sheet.iter_rows(min_row=2):  # Assuming the first row contains headers
+        for cell in row:
+            if cell.value and isinstance(cell.value, str):  # Check if the cell contains a string
+                for refNumber in referenceNumberList:
+                    if refNumber in cell.value:
+                        price = sheet.cell(row=cell.row, column=utils.column_index_from_string(breakdownColumn)).value
+                        refAndBreakdownList[refNumber] = price
+                        referencesNotFound.discard(refNumber)  # Remove the refNumber from referencesNotFound if found
+
+    return refAndBreakdownList, list(referencesNotFound)
+
+def updateGrossAmounts(workbook,sheet,referenceGrossMap, filePath):
+    orderNoColumnIndex = None
+    grossColumnIndex = None
+    for cell in sheet[1]:  # Assuming the first row contains headers
+        if cell.value and isinstance(cell.value, str):
+            if "order" in cell.value.lower() and "no" in cell.value.lower():
+                orderNoColumnIndex = cell.column
+            if "gross" in cell.value.lower():
+                grossColumnIndex = cell.column
+
+    if orderNoColumnIndex is None or grossColumnIndex is None:
+        raise ValueError("Required columns 'Order No' or 'Gross' not found in the sheet.")
+
+    # Iterate through the rows and update the Gross column based on matching Order No
+    for row in sheet.iter_rows(min_row=2):  # Assuming the first row contains headers
+        orderNo = row[orderNoColumnIndex - 1].value  # Adjust for 0-based indexing
+        if orderNo in referenceGrossMap:
+            grossText = referenceGrossMap[orderNo]
+            grossAmount = extractDollarValue(grossText)
+            if grossAmount:
+                sheet.cell(row=row[0].row, column=grossColumnIndex).value = float(grossAmount)
+
+    workbook.save(filePath)
+    print("Gross amounts successfully updated in the Excel sheet.")
+
+def extractDollarValue(text):
+    match = re.search(r'=\s*\$([\d,]+\.\d{2})', text)
+    if match:
+        return match.group(1).replace(',', '')
+    return None
 
 
 if __name__ == "__main__":
@@ -69,6 +137,16 @@ if __name__ == "__main__":
 
     sourceSheet = "Consignment Data"
     destinationSheet = "Standard Freight Import Templat"
+    ConsignmentsAndManifests = "Consignments and Manifests"
+    OrderNo = "Order No"
+
+    source_wb = load_workbook(sourceExcel)
+    source_sheet = source_wb[sourceSheet]
+
+    destination_wb = load_workbook(destinationExcel)
+    destination_sheet = destination_wb[destinationSheet]
+
+    ConsignmentsAndManifestsSheet = source_wb[ConsignmentsAndManifests]
 
     column_mapping = {
         'Consignment ID': 'Booking No',
@@ -76,4 +154,12 @@ if __name__ == "__main__":
         'Total SPC': 'Charge Qty'
     }
 
-    CopyColumns(sourceExcel, destinationExcel, column_mapping, sourceSheet, destinationSheet)
+    destinationWB = CopyColumns(destination_wb, column_mapping, source_sheet, destination_sheet)
+    SaveFile(destinationWB, destinationExcel)
+
+    orderNumbers = readOrderIdsFromExcel(destination_sheet, OrderNo)
+ 
+    refAndBreakdownList = SearchRefAndBreakdown(ConsignmentsAndManifestsSheet,orderNumbers)
+
+    updateGrossAmounts(destination_wb,destination_sheet,refAndBreakdownList[0], destinationExcel)
+
