@@ -1,19 +1,26 @@
 from openpyxl import load_workbook
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
+import re
 
-# Constants
-SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE = "Standard Freight Import Templat"
+# SOURCE  SHEET 
 SHEET_COVER = "COVER"
 SHEET_CONSIGNMENT_DATA = "Consignment Data"
 
+# DESTINATION SHEET 
+SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE = "Standard Freight Import Templat"
+
+# SOURCE COLUMN 
 CONSIGNMENT_REFERENCE = "Consignment Reference"
 CONSIGNMENT_ID = "Consignment ID"
+
+# DESTINATION COLUMN 
 ORDER_NO = "Order No"
 BOOKING_NO = "Booking No"
 
+
 def ProcessConsignmentRefValue(value):
-    return value.split('/')[0]
+    return re.split(r'[/-]',value)[0]
 
 
 def OpenBrowseDialog(prompt):
@@ -25,7 +32,7 @@ def OpenBrowseDialog(prompt):
 def IterateColumn(columnName,sheet,ref):
     colDataList = []
     id_col = None
-    for cell in sheet[1]:  # Assuming the header is in the first row
+    for cell in sheet[1]:
         if cell.value == columnName:
             id_col = cell.column
             break
@@ -75,8 +82,12 @@ def saveToFile(data, columnName, sheetName):
     ws.cell(row=1, column=col, value=columnName)
     for indx, value in enumerate(data, start=2):
         ws.cell(row=indx, column=col, value=value)
-
+    print(f"Saved: {columnName}, Sheet: {sheetName}, total rows: {len(data)}")
     destinationWB.save(destinationExcel)
+
+def StartProcess(sourceColumnName,sourceSheetName,destinationColumnName,destinationSheetName,regExFlag):
+    consignmentIdData = ProcessColumn(sourceColumnName,sourceSheetName,regExFlag)
+    saveToFile(consignmentIdData,destinationColumnName,destinationSheetName)
 
 
 if __name__ == "__main__":
@@ -84,8 +95,5 @@ if __name__ == "__main__":
     destinationExcel = LoadExcelFile()
     destinationWB = load_workbook(filename=destinationExcel)
 
-    consignmentIdData = ProcessColumn(CONSIGNMENT_ID,SHEET_CONSIGNMENT_DATA,False)
-    saveToFile(consignmentIdData,BOOKING_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE)
-
-    consignmentReferenceData = ProcessColumn(CONSIGNMENT_REFERENCE,SHEET_CONSIGNMENT_DATA,True)
-    saveToFile(consignmentReferenceData,ORDER_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE)
+    StartProcess(CONSIGNMENT_ID,SHEET_CONSIGNMENT_DATA,BOOKING_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE,False)
+    StartProcess(CONSIGNMENT_REFERENCE,SHEET_CONSIGNMENT_DATA,ORDER_NO,SHEET_STANDARD_FREIGHT_IMPORT_TEMPLATE,True)
